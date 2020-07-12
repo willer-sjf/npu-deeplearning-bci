@@ -4,12 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-FRE_THETA  = 4
-FRE_ALPHA  = 8
-FRE_BETA   = 13
-FRE_CUT    = 30
-FRE_SAMPLE = 512
-ORDER      = 8
 
 def set_random_seed(seed=0):
     random.seed(seed)
@@ -19,6 +13,13 @@ def set_random_seed(seed=0):
     torch.backends.cudnn.deterministic = True
     
 def freq_filter(data):
+    FRE_THETA  = 4
+    FRE_ALPHA  = 8
+    FRE_BETA   = 13
+    FRE_CUT    = 30
+    FRE_SAMPLE = 512
+    ORDER      = 8
+
     cb, ca = signal.butter(ORDER,  2 * FRE_CUT/FRE_SAMPLE  , 'lowpass'   ) 
     lb, la = signal.butter(ORDER,  2 * FRE_THETA/FRE_SAMPLE, 'highpass'  ) 
     mub, mua = signal.butter(ORDER,  2 * FRE_ALPHA/FRE_SAMPLE, 'highpass') 
@@ -35,3 +36,32 @@ def freq_filter(data):
 
     new_data = np.array([theta, alpha, beta])
     return new_data
+
+def integrate_data(PATH):
+    
+    total_data  = None
+    total_label = None
+    for i in range(1,33):
+        if i < 10:
+            expId = "0" + str(i)
+        else:
+            expId = str(i)
+        file_path = PATH + 's' + str(expId) + '.dat'
+        tmp_data = pickle.load(open(file_path, 'rb'), encoding='bytes')
+        data = tmp_data[b'data']
+        label = tmp_data[b'labels']
+
+        data = np.swapaxes(data, 1, 2)
+        data = data.reshape(8064*40, 40)
+
+        if total_data:
+            total_data  = np.concatenate((total_data, data), axis=0)
+            total_label = np.concatenate((total_label, label), axis=0)
+        else:
+            total_data  = data
+            total_label = label
+
+    pdata = pd.DataFrame(total_data)
+    plabel = pd.DataFrame(total_label)
+    pdata.to_csv('preprocessed_data.csv', index=False, header=None)
+    plabel.to_csv('preprocessed_label.csv', index=False, header=None)
