@@ -47,21 +47,21 @@ def integrate_data(PATH):
         else:
             expId = str(i)
         file_path = PATH + 's' + str(expId) + '.dat'
-        tmp_data = pickle.load(open(file_path, 'rb'), encoding='bytes')
-        data = tmp_data[b'data']
+        tmp_data  = pickle.load(open(file_path, 'rb'), encoding='bytes')
+        data  = tmp_data[b'data']
         label = tmp_data[b'labels']
 
-        data = np.swapaxes(data, 1, 2)
-        data = data.reshape(8064*40, 40)
+        #data = np.swapaxes(data, 1, 2)
+        data = data.reshape(40*40, 8064)
 
-        if total_data:
+        if str(type(total_data)) == "<class 'numpy.ndarray'>":
             total_data  = np.concatenate((total_data, data), axis=0)
             total_label = np.concatenate((total_label, label), axis=0)
         else:
             total_data  = data
             total_label = label
 
-    pdata = pd.DataFrame(total_data)
+    pdata  = pd.DataFrame(total_data)
     plabel = pd.DataFrame(total_label)
-    pdata.to_csv('preprocessed_data.csv', index=False, header=None)
-    plabel.to_csv('preprocessed_label.csv', index=False, header=None)
+    pdata.to_csv( PATH + 'preprocessed_data_1d.csv', index=False)
+    plabel.to_csv(PATH + 'preprocessed_label_1d.csv', index=False)
