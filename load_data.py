@@ -34,6 +34,18 @@ def get_dataloader(file_path, batch_size=64, test_size=0.2, task='classify'):
     return train_loader, test_loader
 
 
+def boost_dataloader(data, label, batch_size=128):
+    
+    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=0.20)
+    train_set = MyDataset(train_data, train_label)
+    test_set  = MyDataset(test_data, test_label)
+    
+    train_loader = DataLoader(train_set, batch_size=batch_size)
+    test_loader  = DataLoader(test_set , batch_size=batch_size)
+    
+    return train_loader, test_loader
+
+    
 class MyDataset(Dataset):
     def __init__(self, data, label, task='classify'):
         self.data  = data
@@ -49,8 +61,8 @@ class MyDataset(Dataset):
     def __getitem__(self, index):
         data  = self.data[index]
         label = self.label[index]
-        
-        data  = torch.FloatTensor(data).to(self.device)
+
+        data = torch.FloatTensor(data).to(self.device)
         if self.task == 'classify':
             label = torch.LongTensor(label).to(self.device)
         else:

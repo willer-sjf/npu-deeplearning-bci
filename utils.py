@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import pyeeg
+import pywt
 
 def set_random_seed(seed=0):
     random.seed(seed)
@@ -35,6 +36,28 @@ def freq_filter(data):
     beta  = preprocess(signal.filtfilt(hub, hua, data)) 
 
     new_data = np.array([theta, alpha, beta])
+    return new_data
+
+def freq_filter_shorttime():
+    
+    band = [4,8,12,16,25,45]
+    window_size = 256 
+    step_size = 64 
+    sample_rate = 128
+
+    new_data = np.zeros(shape=(40*32, 160, 123))
+    for index in range(40*32):
+        data = ndata[index][:32]
+        fp_data = np.zeros(shape=(123, 160), dtype=float)
+        for t in range(123):
+            fp_data_t = np.zeros(160, dtype=float)
+            for i in range(32):
+                single = data[i][t:t + window_size]
+                fp, norm_fp = pyeeg.bin_power(single, band, sample_rate)
+                fp_data_t[i*5:(i+1)*5] = norm_fp
+            fp_data[t] = fp_data_t
+        fp_data = np.swapaxes(fp_data, 0, 1)
+        new_data[index] = fp_data
     return new_data
 
 def integrate_data(PATH):
