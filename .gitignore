@@ -1,3 +1,6 @@
-.ipynb
+*.ipynb
 .ipynb_checkpoints
 /runs/
+/gumpy/
+/__pycache__/
+/.git/

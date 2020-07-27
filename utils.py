@@ -38,8 +38,27 @@ def freq_filter(data):
     new_data = np.array([theta, alpha, beta])
     return new_data
 
+def wavelet_transform(data):
+    coeffs = pywt.wavedec(data, 'db4',level=4)
+    cA,cB,cC,cD,cE = coeffs
+    data = np.concatenate((cA, cB), axis=0)
+
+    data = normalize(data, axis=1, copy=False)
+
+    f, t, z = signal.stft(data, fs=128)
+    z = np.abs(z)
+
+    h = np.sum(z[:, 6:14 , :], axis=1)
+    b = np.sum(z[:, 14:26, :], axis=1)
+    p = np.sum(z[:, 26:58, :], axis=1)
+    t = np.sum(z[:, 58:94, :], axis=1)
+    data = np.concatenate((h, b, p, t), 0)
+    return data
+
 def freq_filter_shorttime():
-    
+    """
+    pyeeg bin power band filter
+    """
     band = [4,8,12,16,25,45]
     window_size = 256 
     step_size = 64 
@@ -61,7 +80,9 @@ def freq_filter_shorttime():
     return new_data
 
 def integrate_data(PATH):
-    
+    """
+    Low Effectiveness
+    """
     total_data  = None
     total_label = None
     for i in range(1,33):
