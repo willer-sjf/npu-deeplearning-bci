@@ -6,6 +6,12 @@ import torch.nn.functional as F
 import pyeeg
 import pywt
 
+def softmax(x):
+    x = x - np.max(x)
+    exp_x = np.exp(x)
+    x = exp_x / np.sum(exp_x)
+    return x 
+
 def set_random_seed(seed=0):
     random.seed(seed)
     np.random.seed(seed)
