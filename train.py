@@ -9,7 +9,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-np.set_printoptions(threshold = 1e6)
+
 import datetime
 from tensorboardX import SummaryWriter
 
@@ -26,25 +26,25 @@ for i in range(epoch):
     train_correct = train_total = 0
     test_correct  = test_total  = 0
     train_loss = test_loss = 0
-    
+
     net.train()
     for input, label in train_loader:
         #output = net(input)
         output, attn = net(input)
         prediction = torch.argmax(output, 1)
         label = label.view(-1)
-        
+
         loss = criterion_cel(output, label)
         train_loss += loss.item()
-        
+
         train_correct += (prediction == label).sum().float()
         train_total += len(label)
-        
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        
+
     net.eval()
     for input, label in test_loader:
 #         output = net(input)
@@ -53,7 +53,7 @@ for i in range(epoch):
             attn = attn.detach().cpu().numpy()
             test_size += attn.shape[0]
             stat += attn.sum(0)
-        
+
         prediction = torch.argmax(output, 1)
         label = label.view(-1)
 

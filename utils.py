@@ -10,7 +10,7 @@ def softmax(x):
     x = x - np.max(x)
     exp_x = np.exp(x)
     x = exp_x / np.sum(exp_x)
-    return x 
+    return x
 
 def set_random_seed(seed=0):
     random.seed(seed)
@@ -18,7 +18,7 @@ def set_random_seed(seed=0):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
-    
+
 def freq_filter(data):
     FRE_THETA  = 4
     FRE_ALPHA  = 8
@@ -27,19 +27,19 @@ def freq_filter(data):
     FRE_SAMPLE = 512
     ORDER      = 8
 
-    cb, ca = signal.butter(ORDER,  2 * FRE_CUT/FRE_SAMPLE  , 'lowpass'   ) 
-    lb, la = signal.butter(ORDER,  2 * FRE_THETA/FRE_SAMPLE, 'highpass'  ) 
-    mub, mua = signal.butter(ORDER,  2 * FRE_ALPHA/FRE_SAMPLE, 'highpass') 
+    cb, ca = signal.butter(ORDER,  2 * FRE_CUT/FRE_SAMPLE  , 'lowpass'   )
+    lb, la = signal.butter(ORDER,  2 * FRE_THETA/FRE_SAMPLE, 'highpass'  )
+    mub, mua = signal.butter(ORDER,  2 * FRE_ALPHA/FRE_SAMPLE, 'highpass')
     mdb, mda = signal.butter(ORDER,  2 * FRE_ALPHA/FRE_SAMPLE, 'lowpass' )
-    hub, hua = signal.butter(ORDER,  2 * FRE_BETA/FRE_SAMPLE , 'highpass') 
-    hdb, hda = signal.butter(ORDER,  2 * FRE_BETA/FRE_SAMPLE , 'lowpass' ) 
+    hub, hua = signal.butter(ORDER,  2 * FRE_BETA/FRE_SAMPLE , 'highpass')
+    hdb, hda = signal.butter(ORDER,  2 * FRE_BETA/FRE_SAMPLE , 'lowpass' )
 
     data = signal.filtfilt(cb, ca, data)
     data = signal.filtfilt(lb, la, data)
 
     theta = preprocess(signal.filtfilt(mdb, mda, data))
-    alpha = preprocess(signal.filtfilt(hdb,hda,signal.filtfilt(mub, mua, data))) 
-    beta  = preprocess(signal.filtfilt(hub, hua, data)) 
+    alpha = preprocess(signal.filtfilt(hdb,hda,signal.filtfilt(mub, mua, data)))
+    beta  = preprocess(signal.filtfilt(hub, hua, data))
 
     new_data = np.array([theta, alpha, beta])
     return new_data
@@ -61,17 +61,17 @@ def wavelet_transform(data):
     data = np.concatenate((h, b, p, t), 0)
     return data
 
-def freq_filter_shorttime():
+def freq_filter_shorttime(data, channel=3, sequence=1000):
     """
     pyeeg bin power band filter
     """
     band = [4,8,12,16,25,45]
-    window_size = 256 
-    step_size = 64 
+    window_size = 256
+    step_size = 64
     sample_rate = 128
-
+    size = data.shape[0]
     new_data = np.zeros(shape=(40*32, 160, 123))
-    for index in range(40*32):
+    for index in range(size):
         data = ndata[index][:32]
         fp_data = np.zeros(shape=(123, 160), dtype=float)
         for t in range(123):

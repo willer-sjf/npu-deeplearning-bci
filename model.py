@@ -218,10 +218,10 @@ class TemporalAttentionNet(nn.Module):
         sequence_lens=1000,
         time_lens=10, 
         hidden_size=256, 
-        hidden_attention_size=512,
+        hidden_attention_size=128,
         output_size=2, 
         layer_size=1, 
-        bidirectional=False
+        bidirectional=True
     ):
         super(TemporalAttentionNet, self).__init__()
         
@@ -285,7 +285,7 @@ class SpacialAttentionNet(nn.Module):
         hidden_attention_size=512,
         output_size=2, 
         layer_size=1, 
-        bidirectional=False
+        bidirectional=True
     ):
         super(SpacialAttentionNet, self).__init__()
         
@@ -366,7 +366,7 @@ class FrequencyAttentionNet(nn.Module):
         self.band_net = nn.ModuleList()
         for i in range(band_size):
             sub_net = SubFeatureNet(sequence_lens=sequence_lens,
-                                    time_lens=10, 
+                                    time_lens=time_lens, 
                                     hidden_size=256, 
                                     layer_size=1, 
                                     feature_size=feature_size,
