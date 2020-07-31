@@ -4,5 +4,5 @@
 2
 ### Frequency Feature Selection
 3
-### Time Feature Aware
+### Temporay Feature Selection
 4

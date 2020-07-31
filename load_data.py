@@ -82,9 +82,10 @@ class MyDataset(Dataset):
         
     def __getitem__(self, index):
         data  = self.data[index]
+        data = data[0]
         label = self.label[index]
 
-        data = torch.FloatTensor(data).to(self.device)
+        data = torch.FloatTensor([data]).to(self.device)
         if self.task == 'classify':
             label = torch.LongTensor(label).to(self.device)
         else:
