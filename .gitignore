@@ -3,4 +3,5 @@
 /gumpy/
 /__pycache__/
 /.git/
-
+/rl-runs/
+/runs/
