@@ -28,9 +28,9 @@ def get_dataloader_graz(batch_size=128):
     nlabel = nlabel.reshape(-1, 1)
     train_loader, test_loader = boost_dataloader(ndata, nlabel, batch_size=batch_size)
     return train_loader, test_loader
-    
+
 def get_dataloader_deap(file_path, batch_size=64, test_size=0.2, task='classify'):
-    
+
     pdata  = pd.read_csv(file_path + 'preprocessed_data_1d.csv')
     plabel = pd.read_csv(file_path + 'preprocessed_label_1d.csv')
     ndata = np.array(pdata)
@@ -42,10 +42,10 @@ def get_dataloader_deap(file_path, batch_size=64, test_size=0.2, task='classify'
     train_data, test_data, train_label, test_label = train_test_split(ndata, nlabel, test_size=0.20)
     train_set = MyDataset(train_data, train_label)
     test_set  = MyDataset(test_data, test_label)
-    
+
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     test_loader  = DataLoader(test_set , batch_size=batch_size, shuffle=True)
-    
+
     return train_loader, test_loader
 
 def get_grazdata():
@@ -57,17 +57,17 @@ def get_grazdata():
     return ndata, nlabel
 
 def boost_dataloader(data, label, batch_size=128):
-    
+
     train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=0.20)
     train_set = MyDataset(train_data, train_label)
     test_set  = MyDataset(test_data, test_label)
-    
+
     train_loader = DataLoader(train_set, batch_size=batch_size)
     test_loader  = DataLoader(test_set , batch_size=batch_size)
-    
+
     return train_loader, test_loader
 
-   
+
 class MyDataset(Dataset):
     def __init__(self, data, label, task='classify'):
         self.data  = data
@@ -76,13 +76,12 @@ class MyDataset(Dataset):
         self.task = task
         if task not in ['classify', 'regression']:
             raise ValueError("UNDEFINED TASK")
-            
+
     def __len__(self):
         return self.label.shape[0]
-        
+
     def __getitem__(self, index):
         data  = self.data[index]
-        data = data[0]
         label = self.label[index]
 
         data = torch.FloatTensor([data]).to(self.device)
@@ -91,7 +90,7 @@ class MyDataset(Dataset):
         else:
             label = torch.FloatTensor(label).to(self.device)
         return data, label
-    
+
 def load_preprocess_data(data, debug, lowcut, highcut, w0, Q, anti_drift, class_count, cutoff, axis, fs):
     """Load and preprocess data.
 
@@ -128,7 +127,7 @@ def load_preprocess_data(data, debug, lowcut, highcut, w0, Q, anti_drift, class_
 
 #         print("Data loaded and processed successfully!")
         return x_train, y_train
-    
+
 def get_Xy(sub="B01"):
     DEBUG = True
     CLASS_COUNT = 2
@@ -140,14 +139,14 @@ def get_Xy(sub="B01"):
     HIGHCUT = 60
     ANTI_DRIFT = 0.5
     CUTOFF = 50.0 # freq to be removed from signal (Hz) for notch filter
-    Q = 30.0  # quality factor for notch filter 
+    Q = 30.0  # quality factor for notch filter
     W0 = CUTOFF/(FS/2)
     AXIS = 0
 
     #set random seed
     SEED = 42
     KFOLD = 5
-    # ## Load raw data 
+    # ## Load raw data
     # Before training and testing a model, we need some data. The following code shows how to load a dataset using ``gumpy``.
     # specify the location of the GrazB datasets
     data_dir = PATH
@@ -157,7 +156,7 @@ def get_Xy(sub="B01"):
     # initialize the data-structure, but do _not_ load the data yet
     grazb_data = gumpy.data.GrazB(data_dir, subject)
 
-    # now that the dataset is setup, we can load the data. This will be handled from within the utils function, 
+    # now that the dataset is setup, we can load the data. This will be handled from within the utils function,
     # which will first load the data and subsequently filter it using a notch and a sbandpass filter.
     # the utility function will then return the training data. 取得每一次试验的所有数据，8s。
     x_train, y_train = load_preprocess_data(grazb_data, True, LOWCUT, HIGHCUT, W0, Q, ANTI_DRIFT, CLASS_COUNT, CUTOFF, AXIS, FS)
@@ -173,8 +172,8 @@ def get_Xy(sub="B01"):
     x_subject = x_augmented
     y_subject = y_augmented
     x_subject = np.rollaxis(x_subject, 2, 1)
-    
-    
+
+
     return x_subject,y_subject
 
 
@@ -195,7 +194,7 @@ def print_version_info():
 def get_Xy2(sub="B01"): # _v2
     eeg_data = {}
     dataset_dir = PATH
-    
+
     file = os.path.join(dataset_dir, f"sub{sub}-win4-stride0.2 V2.pkl")
 
     if not os.path.exists(file):
@@ -209,18 +208,18 @@ def get_Xy2(sub="B01"): # _v2
             eeg_data = pickle.load(fr)
 
     return eeg_data["x_subject"],eeg_data["y_subject"]
-    
+
 def get_Xy_v1(sub="B01"):
     eeg_data = {}
     dataset_dir = PATH
-    
+
     file = os.path.join(dataset_dir, f"sub{sub}-win4-stride0.2 V2.pkl")
 
     if not os.path.exists(file):
         x_subject,y_subject=get_Xy(sub)
         eeg_data["x_subject"]=x_subject
         eeg_data["y_subject"]=y_subject
-        
+
         with open(file, 'wb') as fw:
             pickle.dump(eeg_data, fw, protocol=4)
     else:
