@@ -1,7 +1,8 @@
 *.ipynb
 .ipynb_checkpoints
-/gumpy/
-/__pycache__/
+gumpy/
+__pycache__/
 /.git/
-/rl-runs/
-/runs/
+rl-runs/
+encode_data/
+runs/

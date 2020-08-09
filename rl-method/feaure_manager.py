@@ -8,6 +8,11 @@ import datetime
 import random 
 
 
+def cal_cosine_similarity(vector_a, vector_b):
+    inner = np.dot(vector_a, vector_b.transpose())
+    norm = np.linalg.norm(vector_a) * np.linalg.norm(vector_b)
+    return inner / norm
+
 class FeatureManager:
     def __init__(self, data):
         self.data = data
@@ -28,7 +33,7 @@ class FeatureManager:
             remaining = new_state[new_index[:i] + new_index[i+1:]]
             mean_state, var_state = self.mean_var_state(remaining)
             ret_state.append([new_state[i], mean_state, var_state])
-        
+        self.index = new_index
         return avg_state, ret_state
     
     def mean_var_state(self, remaining_feature):
@@ -47,30 +52,36 @@ class FeatureManager:
     
 class DropEnv:
     def __init__(self, data, label):
-        self.reward_module = RewardNet(input_size=6)
+        self.reward_module = RewardNet(input_size=data.shape[-1])
         self.data  = data
         self.label = label
         
+        self.gamma = 0.1
         self.data_size = self.data.shape[0]
         self.channel_size = self.data.shape[1]
-        
+
     def step(self, action):
         self.manager.drop(action)
         avg_state, state = self.manager.state()
-
-        reward = self.reward_module(avg_state).data
-        reward = reward[0] - reward[1]
-
+    
+        cls_vector = self.reward_module(avg_state).numpy()
+        self.new_sim = cal_cosine_similarity(cls_vector, self.current_label)
+        
+        reward  = self.new_sim - self.old_sim + self.gamma
+        self.old_sim = self.new_sim
         done = False
         if reward < 0 and random.random() < 0.5:
             done = True
         return state, reward, done
     
     def reset(self):
-        single_data = data[random.randint(1, self.data_size-1)]
+        index = random.randint(1, self.data_size-1)
+        single_data = data[index]
         self.manager = FeatureManager(single_data)
-#         random_drop_num = random.randint(1, self.channel_size//3)
-#         random_drop_idx = random.sample(range(0, self.channel_size), random_drop_num)
-#         for idx in random_drop_idx:
-#             self.manager.drop(idx)
+        self.current_label = self.label[index]
+        random_drop_num = random.randint(1, self.channel_size//3)
+        random_drop_idx = random.sample(range(0, self.channel_size), random_drop_num)
+        for idx in random_drop_idx:
+            self.manager.drop(idx)
+        self.old_sim = 1
         return self.manager.state()
