@@ -38,7 +38,14 @@ class ReplayBuffer:
         idxes = [random.randint(0, len(self._storage) - 1) for _ in range(batch_size)]
         return self._encode_sample(idxes)
     
-
+        
+        
+def reward_shape(origin_reward, discount):
+    length = len(origin_reward)
+    new_reward = np.zeros_like(origin_reward, dtype=float)
+    for i in reversed(range(length)):
+        new_reward[i] = origin_reward[i] + (discount * new_reward[i+1] if i+1 < length else 0)
+    return new_reward
     
 class Q_Net(nn.Module):
     
@@ -70,65 +77,77 @@ class Q_Net(nn.Module):
         q = F.relu(self.fc1(f_merge))
         q = self.fc2(q)
         return q
-        
-        
+
+
 class ADAgent:
     def __init__(self, data, label):
         
         self.gamma = 0.97
-        
+        self.epsilon = 0.3
+        self.max_drop = 2
         self.env = DropEnv(data, label)
-        self.eval_net   = Q_Net(state_dim, action_dim).to(self.device)
-        self.target_net = Q_Net(state_dim, action_dim).to(self.device)
+        
+        self.eval_net   = Q_Net(data.shape[-1])
 
-        self.device = torch.device('cuda')
-        self.memory = buffer.ReplayBuffer(memory_capacity)
-        self.writer = SummaryWriter()
+        #self.writer = SummaryWriter()
+        
+        self.interaction_counter = 0
+        self.learn_step_counter = 0
+        self.step_update = 10
         
         self.optimizer = torch.optim.Adam(self.eval_net.parameters(), lr=1e-3, weight_decay=1e-5)
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma = 0.97)
 
     def select_action(self, state):
         action = -1
-        q_max = -1
-        for index, (fea, mean, var) in state:
-            q = self.Q_Net(fea, mean, var)
-            if action == -1:
-                action = index
-                q_max = q
-            elif q > q_max:
-                action = index
-                q_max = q
+        q_max = None
+        action_dim = len(state)
+        if random.random() < self.epsilon:
+            for index, (fea, mean, var) in enumerate(state):
+                q = self.eval_net(fea, mean, var)
+                if action == -1:
+                    action = index
+                    q_max = q
+                elif q > q_max:
+                    action = index
+                    q_max = q
+        else:
+            action = random.randint(0, action_dim)
+            q_max  = self.eval_net(state[action])
         return action, q_max
     
     def train(self):
-        state = self.env.reset()
-        q = []
-        r = []
-        for i in range(self.max_drop):
-            action, q_pred = self.select_action(state)
-            new_state, reward, done = self.env.step(action)
-            
-            q += [q_pred]
-            r += [reward]
-            if done:
-                break
-            state = new_state
-            
-        r = reward_shape(r, self.gamma)
-        self.learn(q, r)
+        for _ in range(10):
+            self.interaction_counter += 1
+            state = self.env.reset()
+            q = []
+            r = []
+            for i in range(self.max_drop):
+                action, q_pred = self.select_action(state)
+                new_state, reward, done = self.env.step(action)
+
+                q += [q_pred]
+                r += [reward]
+                if done:
+                    #self.summary.add_scalar('epsiode lens', i, self.interaction_counter)
+                    print('i')
+                    break
+                state = new_state
+
+            # r = reward_shape(r, self.gamma)
+
+            self.learn(q, r)
         
     def learn(self, q, r):
 
-        if self.learn_step_counter % self.step_update_target_net ==0:
-            self.target_net.load_state_dict(self.eval_net.state_dict())
-        self.learn_step_counter+=1
+        self.learn_step_counter += 1
 
         self.epsilon *= 1.005
         self.epsilon = min(self.epsilon, 0.97)
 
-        q_score = torch.stack(q ,dim = 0).to(self.device)
-        r_score = torch.stack(r ,dim = 0).to(self.device)
+        q_score = torch.stack(q ,dim = 0)
+        r_score = torch.FloatTensor(r)
+        r_score = r_score.reshape(-1, 1)
         
         loss = F.mse_loss(q_score, r_score)
         self.optimizer.zero_grad()
@@ -136,4 +155,6 @@ class ADAgent:
         self.optimizer.step()
         self.scheduler.step()
         
-        self.writer.add_scalar('loss', loss, self.learn_step_counter)
+        #self.writer.add_scalar('loss', loss, self.learn_step_counter)
+        print('loss : {:.4f}'.format(loss.item()))
+

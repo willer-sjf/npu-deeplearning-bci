@@ -39,8 +39,8 @@ class FeatureManager:
     def mean_var_state(self, remaining_feature):
         shape = remaining_feature.shape[1]
         size  = remaining_feature.shape[0]
-        mean_state = torch.zeros(shape, dtype=float)
-        var_state  = torch.zeros(shape, dtype=float)
+        mean_state = torch.zeros(shape, dtype=torch.float32)
+        var_state  = torch.zeros(shape, dtype=torch.float32)
         for i in range(size):
             mean_state += remaining_feature[i]
         mean_state /= size
@@ -53,9 +53,10 @@ class FeatureManager:
 class DropEnv:
     def __init__(self, data, label):
         self.reward_module = RewardNet(input_size=data.shape[-1])
-        self.data  = data
+        self.data  = torch.from_numpy(data)
         self.label = label
         
+        self.phase = 'test'
         self.gamma = 0.1
         self.data_size = self.data.shape[0]
         self.channel_size = self.data.shape[1]
@@ -74,14 +75,27 @@ class DropEnv:
             done = True
         return state, reward, done
     
+    def train(self):
+        self.phase = 'train'
+        
+    def eval(self):
+        self.phase = 'test'
+        
     def reset(self):
         index = random.randint(1, self.data_size-1)
-        single_data = data[index]
+        single_data = self.data[index]
         self.manager = FeatureManager(single_data)
         self.current_label = self.label[index]
-        random_drop_num = random.randint(1, self.channel_size//3)
-        random_drop_idx = random.sample(range(0, self.channel_size), random_drop_num)
-        for idx in random_drop_idx:
-            self.manager.drop(idx)
-        self.old_sim = 1
-        return self.manager.state()
+        
+        if self.phase == 'train':
+            random_drop_num = random.randint(1, self.channel_size//3)
+            random_drop_idx = random.sample(range(0, self.channel_size), random_drop_num)
+            for idx in random_drop_idx:
+                self.manager.drop(idx)
+                
+        init_avg_state, init_state = self.manager.state()
+        #init_avg_state = torch.FloatTensor(init_avg_state)
+        
+        init_cls_vector = self.reward_module(init_avg_state).numpy()
+        self.old_sim = cal_cosine_similarity(init_cls_vector, self.current_label)
+        return init_state
