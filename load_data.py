@@ -15,8 +15,8 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 import utils
 utils.set_random_seed(0)
-
 PATH = '/home/willer/Desktop/Development/Python/dataset/grazdata/'
+
 def label_map(x, pos=0, classes=2):
     if x[pos] >= 5:
         return [1, 0]
@@ -56,9 +56,9 @@ def get_grazdata():
         nlabel = np.concatenate([nlabel, y], 0)
     return ndata, nlabel
 
-def boost_dataloader(data, label, batch_size=128):
+def boost_dataloader(data, label, batch_size=128, test_size=0.20):
 
-    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=0.20)
+    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=test_size)
     train_set = MyDataset(train_data, train_label)
     test_set  = MyDataset(test_data, test_label)
 

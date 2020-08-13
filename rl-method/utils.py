@@ -14,21 +14,21 @@ def useless():
     n = data.signals_in_file
     print("signal numbers:", n)
 
-    raw_data = mne.io.read_raw_edf(PATH, preload=True)   
+    raw_data = mne.io.read_raw_edf(PATH, preload=True)
     pdata = raw_data.to_data_frame()
-    raw.pick_channels([signal_name])   
-    eeg = raw.to_data_frame()   # 将读取的数据转换成pandas的DataFrame数据格式
-    eeg = list(eeg.values[:,1])  
+    raw.pick_channels([signal_name])
+    eeg = raw.to_data_frame()
+    eeg = list(eeg.values[:,1])
 
     events_from_annot, event_dict = mne.events_from_annotations(raw_data)
     print(event_dict)
     print(events_from_annot)
 
     anno = data.read_annotation()
-    
-def boost_dataloader(data, label, batch_size=128):
 
-    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=0.20)
+def boost_dataloader(data, label, batch_size=128, test_size=0.20):
+
+    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=test_size)
     train_set = MyDataset(train_data, train_label)
     test_set  = MyDataset(test_data, test_label)
 

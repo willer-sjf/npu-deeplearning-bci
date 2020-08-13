@@ -13,27 +13,15 @@ from sklearn.preprocessing import normalize
 seed = 0
 utils.set_random_seed(seed)
 np.set_printoptions(precision=4, suppress=True)
-device = torch.device('cuda')
-PATH = '/home/willer/Desktop/Development/Python/MyRepo/npu-deeplearning-bci/model/'
-
-
-ndata, nlabel = load_data.get_grazdata()
-train_loader, test_loader = load_data.get_dataloader_graz()
-fnet = model.FrequencyAttentionNet().to(device)
-fnet.load_state_dict(torch.load(PATH + 'FrequencyAttentionNet_feature_withLSTM.pkl'))
-snet = model.SpacialAttentionNet().to(device)
-snet.load_state_dict(torch.load(PATH + 'SpacialAttentionNet_feature_withLSTM.pkl'))
-tnet = model.TemporalAttentionNet().to(device)
-tnet.load_state_dict(torch.load(PATH + 'TemporalAttentionNet_feature_withLSTM.pkl'))
-
 
 def get_attention_distribution(f_size, t_size, s_size):
-    f_1 = np.zeros(3, dtype=np.float)
-    f_0 = np.zeros(3, dtype=np.float)
-    t_1 = np.zeros(10, dtype=np.float)
-    t_0 = np.zeros(10, dtype=np.float)
-    s_1 = np.zeros(3, dtype=np.float)
-    s_0 = np.zeros(3, dtype=np.float)
+
+    f_1 = np.zeros(f_size, dtype=np.float)
+    f_0 = np.zeros(f_size, dtype=np.float)
+    t_1 = np.zeros(t_size, dtype=np.float)
+    t_0 = np.zeros(t_size, dtype=np.float)
+    s_1 = np.zeros(s_size, dtype=np.float)
+    s_0 = np.zeros(s_size, dtype=np.float)
 
     l1 = 0
     l0 = 0
@@ -58,11 +46,30 @@ def get_attention_distribution(f_size, t_size, s_size):
             s_0 += sattn[index_0].sum(0)
             t_1 += tattn[index_1].sum(0)
             t_0 += tattn[index_0].sum(0)
+
             l1 += index_1.shape[0]
             l0 += index_0.shape[0]
-            
-index = -31235
-with torch.no_grad():
-    input = torch.FloatTensor([ndata[index]]).to(device)
-    o, attn = fnet(input)
-    print(attn)
+
+    return (f_1, f_0), (t_1, t_0), (s_1, s_0), (l1, l0)
+
+def get_single_attention(index):
+    with torch.no_grad():
+        input = torch.FloatTensor([ndata[index]]).to(device)
+        _, fattn = fnet(input)
+        _, tattn = tnet(input)
+        _, sattn = snet(input)
+
+    return fattn, tattn, sattn
+
+if __name__ == '__main__':
+    device = torch.device('cuda')
+    PATH = '/home/willer/Desktop/Development/Python/MyRepo/npu-deeplearning-bci/model/'
+
+    ndata, nlabel = load_data.get_grazdata()
+    train_loader, test_loader = load_data.get_dataloader_graz()
+    fnet = model.FrequencyAttentionNet().to(device)
+    fnet.load_state_dict(torch.load(PATH + 'FrequencyAttentionNet_feature_withLSTM.pkl'))
+    snet = model.SpacialAttentionNet().to(device)
+    snet.load_state_dict(torch.load(PATH + 'SpacialAttentionNet_feature_withLSTM.pkl'))
+    tnet = model.TemporalAttentionNet().to(device)
+    tnet.load_state_dict(torch.load(PATH + 'TemporalAttentionNet_feature_withLSTM.pkl'))

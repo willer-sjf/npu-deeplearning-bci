@@ -13,13 +13,12 @@ import matplotlib.pyplot as plt
 import datetime
 from tensorboardX import SummaryWriter
 
-net = FrequencyAttentionNet().to(device)
+net = model.FrequencyAttentionNet().to(device)
 criterion_cel = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=1e-3)
-writer = SummaryWriter("runs/X-FrequencyAttentionNet_feature_withLSTM_" + str(datetime.datetime.now()))
+train_loader, test_loader = load_data.get_dataloader_graz()
+writer = SummaryWriter("runs/FrequencyAttentionNet_" + str(datetime.datetime.now()))
 
-stat = np.zeros(3, dtype=np.float)
-test_size = 0
 epoch = 30
 print('<<=== Begin ===>>')
 for i in range(epoch):
@@ -29,7 +28,7 @@ for i in range(epoch):
 
     net.train()
     for input, label in train_loader:
-        #output = net(input)
+        # output = net(input)
         output, attn = net(input)
         prediction = torch.argmax(output, 1)
         label = label.view(-1)
@@ -44,16 +43,10 @@ for i in range(epoch):
         loss.backward()
         optimizer.step()
 
-
     net.eval()
     for input, label in test_loader:
-#         output = net(input)
+        # output = net(input)
         output, attn = net(input)
-        if i == epoch - 1:
-            attn = attn.detach().cpu().numpy()
-            test_size += attn.shape[0]
-            stat += attn.sum(0)
-
         prediction = torch.argmax(output, 1)
         label = label.view(-1)
 
@@ -63,8 +56,6 @@ for i in range(epoch):
         test_correct += (prediction == label).sum().float()
         test_total += len(label)
 
-    if i % 5 == 0:
-        print('e', i)
     writer.add_scalar('loss/train', train_loss, i)
     writer.add_scalar('loss/test', test_loss, i)
     writer.add_scalar('accuracy/train', train_correct/train_total, i)

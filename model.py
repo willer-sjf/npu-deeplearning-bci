@@ -186,7 +186,6 @@ class ConvLSTM(nn.Module):
 
 
     def forward(self, x):
-
         batch_size = x.shape[0]
 
         x = x.chunk(self.time_lens, 2)
@@ -262,10 +261,7 @@ class TemporalAttentionNet(nn.Module):
         x, (h_final, c_final) = self.lstm(x, (h_0, c_0))
         x = x.permute(1, 0, 2)
 
-        # x = F.avg_pool1d(x, self.time_lens)
-        # x = x.view(batch_size, -1)
         x, attn = self.attn(x)
-
         x = self.fn(x)
         x = F.softmax(x, dim=-1)
         return x, attn
@@ -326,11 +322,8 @@ class SpacialAttentionNet(nn.Module):
         x, (h_final, c_final) = self.lstm(x, (h_0, c_0))
         x = x[-1, :, :]
 
-        # x = F.avg_pool1d(x, self.in_channel)
-        # x = x.view(batch_size, -1)
         x = x.view(batch_size, self.in_channel, -1)
         x, attn = self.attn(x)
-
         x = self.fn(x)
         x = F.softmax(x, dim=-1)
         return x, attn
@@ -384,11 +377,7 @@ class FrequencyAttentionNet(nn.Module):
         x = torch.stack([self.band_net[i](x[i].reshape(batch_size*self.per_channel, 1, -1)) for i in range(self.band_size)], 1)
         x = x.view(batch_size, self.in_channel, -1)
 
-        # x = x.permute(0, 2, 1)
-        # x = F.max_pool1d(x, self.in_channel)
-        # x = x.view(batch_size, -1)
         x, attn = self.attn(x)
-
         x = self.fn(x)
         x = F.softmax(x, dim=-1)
         return x, attn
@@ -413,5 +402,4 @@ class AttentionFeatureNet(nn.Module):
         attn = self.score2(attn)
         attn = F.softmax(attn, 1)
         out = torch.sum(attn * x, dim=1)
-
         return out, attn.view(batch_size, -1)
