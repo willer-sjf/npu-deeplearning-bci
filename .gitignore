@@ -4,6 +4,7 @@ __pycache__/
 .git/
 rl-runs/
 adrl-runs/
+model/
 encode_data/
 runs/
 
