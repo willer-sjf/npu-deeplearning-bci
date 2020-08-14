@@ -19,6 +19,8 @@ def set_random_seed(seed=0):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
+
+
 def freq_filter(data):
     FRE_THETA  = 4
     FRE_ALPHA  = 8
@@ -84,6 +86,38 @@ def freq_filter_shorttime(data, channel=3, sequence=1000):
         fp_data = np.swapaxes(fp_data, 0, 1)
         new_data[index] = fp_data
     return new_data
+
+
+def integrate_eeg_motormovement_data(PATH):
+    ndata = None
+    nlabel = None
+    for i in range(1, 110):
+        prefix = 'S' + '{0:03d}'.format(i)
+        for j in range(3, 15):
+            subfix = prefix + 'R{0:02d}'.format(j)
+            file_name = PATH + prefix + '/' + subfix + '.edf'
+            rdata = mne.io.read_raw_edf(file_name, preload=True)
+            pdata = rdata.to_data_frame()
+            events_from_annot, event_dict = mne.events_from_annotations(raw_data)
+
+            tdata = np.array(pdata.iloc[:656, 1:]).reshape(1, -1, 64)
+            for idx in range(1, 30):
+                sdata = np.array(pdata.iloc[events_from_annot[idx][0]:events_from_annot[idx][0]+656 ,1:]).reshape(1, -1, 64)
+                tdata = np.concatenate([tdata, sdata], 0)
+            tdata = tdata.swapaxes(1,2)
+            tlabel = np.array(list(zip(*events_from_annot))[-1])
+
+            if str(type(ndata)) == "<class 'NoneType'>":
+                ndata  = tdata
+                nlabel = tlabel
+            else:
+                ndata  = np.concatenate([ndata, tdata], 0)
+                nlabel = np.concatenate([nlabel, tlabel], 0)
+
+    np.save(PATH + 'inte_eeg-motormovement_data.npy')
+    np.save(PATH + 'inte_eeg-motormovement_label.npy')
+    print("<<=== Data Saved ===>>")
+
 
 def integrate_data(PATH):
     """

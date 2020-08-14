@@ -1,3 +1,4 @@
+import sys
 import os
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from sklearn.model_selection import train_test_split
 import utils
-utils.set_random_seed(0)
+
 PATH = '/home/willer/Desktop/Development/Python/dataset/grazdata/'
 
 def label_map(x, pos=0, classes=2):
@@ -23,10 +24,21 @@ def label_map(x, pos=0, classes=2):
     else:
         return [0, 1]
 
-def get_dataloader_graz(batch_size=128):
+def boost_dataloader(data, label, batch_size=128, test_size=0.20):
+
+    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=test_size)
+    train_set = MyDataset(train_data, train_label)
+    test_set  = MyDataset(test_data, test_label)
+
+    train_loader = DataLoader(train_set, batch_size=batch_size)
+    test_loader  = DataLoader(test_set , batch_size=batch_size)
+
+    return train_loader, test_loader
+
+def get_dataloader_graz(batch_size=128, test_size=0.2):
     ndata, nlabel = get_grazdata()
     nlabel = nlabel.reshape(-1, 1)
-    train_loader, test_loader = boost_dataloader(ndata, nlabel, batch_size=batch_size)
+    train_loader, test_loader = boost_dataloader(ndata, nlabel, batch_size=batch_size, test_size=test_size)
     return train_loader, test_loader
 
 def get_dataloader_deap(file_path, batch_size=64, test_size=0.2, task='classify'):
@@ -39,13 +51,7 @@ def get_dataloader_deap(file_path, batch_size=64, test_size=0.2, task='classify'
         nlabel = np.array(plabel.apply(label_map, axis=1))
     else:
         nlabel = np.array(plabel)
-    train_data, test_data, train_label, test_label = train_test_split(ndata, nlabel, test_size=0.20)
-    train_set = MyDataset(train_data, train_label)
-    test_set  = MyDataset(test_data, test_label)
-
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    test_loader  = DataLoader(test_set , batch_size=batch_size, shuffle=True)
-
+    train_loader, test_loader = boost_dataloader(ndata, nlabel, batch_size=batch_size, test_size=test_size)
     return train_loader, test_loader
 
 def get_grazdata():
@@ -55,17 +61,6 @@ def get_grazdata():
         ndata = np.concatenate([ndata, x], 0)
         nlabel = np.concatenate([nlabel, y], 0)
     return ndata, nlabel
-
-def boost_dataloader(data, label, batch_size=128, test_size=0.20):
-
-    train_data, test_data, train_label, test_label = train_test_split(data, label, test_size=test_size)
-    train_set = MyDataset(train_data, train_label)
-    test_set  = MyDataset(test_data, test_label)
-
-    train_loader = DataLoader(train_set, batch_size=batch_size)
-    test_loader  = DataLoader(test_set , batch_size=batch_size)
-
-    return train_loader, test_loader
 
 
 class MyDataset(Dataset):
@@ -90,6 +85,12 @@ class MyDataset(Dataset):
         else:
             label = torch.FloatTensor(label).to(self.device)
         return data, label
+
+
+# ===============================================================================================================
+# ===============================================================================================================
+# ===============================================================================================================
+
 
 def load_preprocess_data(data, debug, lowcut, highcut, w0, Q, anti_drift, class_count, cutoff, axis, fs):
     """Load and preprocess data.

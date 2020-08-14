@@ -35,7 +35,6 @@ for i in range(epoch):
 
         loss = criterion_cel(output, label)
         train_loss += loss.item()
-
         train_correct += (prediction == label).sum().float()
         train_total += len(label)
 
@@ -52,7 +51,6 @@ for i in range(epoch):
 
         loss = criterion_cel(output, label)
         test_loss += loss.item()
-
         test_correct += (prediction == label).sum().float()
         test_total += len(label)
 
@@ -60,5 +58,8 @@ for i in range(epoch):
     writer.add_scalar('loss/test', test_loss, i)
     writer.add_scalar('accuracy/train', train_correct/train_total, i)
     writer.add_scalar('accuracy/test', test_correct/test_total, i)
+
 writer.close()
 print('<<=== Finish ===>>')
+torch.save(net.state_dict(), 'model/FrequencyAttentionNet_' + str(datetime.datetime.now()) +'.pkl')
+print('<<=== Param Saved ===>>')

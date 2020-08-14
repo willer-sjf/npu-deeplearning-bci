@@ -3,6 +3,7 @@ gumpy/
 __pycache__/
 .git/
 rl-runs/
+adrl-runs/
 encode_data/
 runs/
 
