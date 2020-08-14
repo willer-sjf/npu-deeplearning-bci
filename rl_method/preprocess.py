@@ -55,7 +55,7 @@ def train_pretrainnet(save_path):
 def get_reward_net(input_size, model_path):
 
     rnet = RewardNet(input_size)
-    pnet = PretrainNet_T(hidden_size=256)
+    pnet = PretrainNet_T()
     pnet.load_state_dict(torch.load(model_path))
 
     rnet_dict = rnet.state_dict()
